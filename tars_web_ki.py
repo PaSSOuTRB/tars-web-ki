@@ -48,7 +48,7 @@ def speak_with_elevenlabs(text):
             unsafe_allow_html=True
         )
     else:
-        st.error("Fehler bei der Sprachausgabe von ElevenLabs")
+        st.error(f"Fehler bei der Sprachausgabe von ElevenLabs: {response.status_code} – {response.text}")
 
 # GPT-Antwort erzeugen
 if user_input:
