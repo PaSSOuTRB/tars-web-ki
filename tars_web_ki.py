@@ -8,22 +8,22 @@ import base64
 openai.api_key = st.secrets["openai_key"]
 elevenlabs_api_key = st.secrets["eleven_key"]
 
+# Initialisierung des Session-State
+if "antwort_laeuft" not in st.session_state:
+    st.session_state["antwort_laeuft"] = False
+
 # Web-Oberfläche
 st.set_page_config(page_title="TARS KI", layout="centered")
 st.title("TARS - Deine deutschsprachige KI")
 st.markdown("**Bereit für den nächsten Befehl, Ramon.**")
 
-# Session-State zum Sperren der Eingabe
-if "antwort_laeuft" not in st.session_state:
-    st.session_state["antwort_laeuft"] = False
+# Regler deaktivieren während Antwort
+humor = st.slider("Humorstufe", 0, 100, 20, disabled=st.session_state["antwort_laeuft"])
+ehrlichkeit = st.slider("Ehrlichkeitsstufe", 0, 100, 100, disabled=st.session_state["antwort_laeuft"])
 
-# Steuerregler
-humor = st.slider("Humorstufe", 0, 100, 20)
-ehrlichkeit = st.slider("Ehrlichkeitsstufe", 0, 100, 100)
-
-# Texteingabe (gesperrt während Antwort)
+# Eingabefeld deaktivieren während Antwort
 if st.session_state["antwort_laeuft"]:
-    st.text_input("Was möchtest du TARS fragen?", value="Warte auf Antwort...", disabled=True)
+    st.text_input("Was möchtest du TARS fragen?", value="TARS verarbeitet...", disabled=True)
     user_input = None
 else:
     user_input = st.text_input("Was möchtest du TARS fragen?")
@@ -34,7 +34,7 @@ def build_prompt(question, humor, ehrlichkeit):
 
 # ElevenLabs Text-to-Speech mit Autoplay
 def speak_with_elevenlabs(text):
-    voice_id = "FTNCalFNG5bRnkkaP5Ug"  # Deutsche Stimme
+    voice_id = "FTNCalFNG5bRnkkaP5Ug"  # Deine Stimme
     url = f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}"
     headers = {
         "xi-api-key": elevenlabs_api_key,
@@ -58,9 +58,9 @@ def speak_with_elevenlabs(text):
     else:
         st.error(f"Fehler bei der Sprachausgabe von ElevenLabs: {response.status_code} – {response.text}")
 
-# GPT-Antwort erzeugen
+# Wenn Eingabe vorhanden, Antwort generieren
 if user_input:
-    st.session_state["antwort_laeuft"] = True  # Eingabe sperren
+    st.session_state["antwort_laeuft"] = True  # Alles sperren
     prompt = build_prompt(user_input, humor, ehrlichkeit)
     with st.spinner("TARS denkt nach..."):
         try:
@@ -73,4 +73,4 @@ if user_input:
             speak_with_elevenlabs(tars_reply)
         except Exception as e:
             st.error(f"Fehler bei OpenAI oder ElevenLabs: {e}")
-    st.session_state["antwort_laeuft"] = False  # Eingabe wieder freigeben
+    st.session_state["antwort_laeuft"] = False  # Alles wieder freigeben
