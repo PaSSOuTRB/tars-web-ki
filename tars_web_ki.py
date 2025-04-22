@@ -13,12 +13,20 @@ st.set_page_config(page_title="TARS KI", layout="centered")
 st.title("TARS - Deine deutschsprachige KI")
 st.markdown("**Bereit für den nächsten Befehl, Ramon.**")
 
+# Session-State zum Sperren der Eingabe
+if "antwort_laeuft" not in st.session_state:
+    st.session_state["antwort_laeuft"] = False
+
 # Steuerregler
 humor = st.slider("Humorstufe", 0, 100, 20)
 ehrlichkeit = st.slider("Ehrlichkeitsstufe", 0, 100, 100)
 
-# Texteingabe
-user_input = st.text_input("Was möchtest du TARS fragen?")
+# Texteingabe (gesperrt während Antwort)
+if st.session_state["antwort_laeuft"]:
+    st.text_input("Was möchtest du TARS fragen?", value="Warte auf Antwort...", disabled=True)
+    user_input = None
+else:
+    user_input = st.text_input("Was möchtest du TARS fragen?")
 
 # Prompt erzeugen
 def build_prompt(question, humor, ehrlichkeit):
@@ -52,6 +60,7 @@ def speak_with_elevenlabs(text):
 
 # GPT-Antwort erzeugen
 if user_input:
+    st.session_state["antwort_laeuft"] = True  # Eingabe sperren
     prompt = build_prompt(user_input, humor, ehrlichkeit)
     with st.spinner("TARS denkt nach..."):
         try:
@@ -64,3 +73,4 @@ if user_input:
             speak_with_elevenlabs(tars_reply)
         except Exception as e:
             st.error(f"Fehler bei OpenAI oder ElevenLabs: {e}")
+    st.session_state["antwort_laeuft"] = False  # Eingabe wieder freigeben
