@@ -3,11 +3,9 @@ import openai
 import requests
 import base64
 
-# API-Schlüssel aus Streamlit Secrets
 openai.api_key = st.secrets["openai_key"]
 elevenlabs_api_key = st.secrets["eleven_key"]
 
-# Session-State Initialisierung
 if "antwort_laeuft" not in st.session_state:
     st.session_state["antwort_laeuft"] = False
 if "letzte_antwort" not in st.session_state:
@@ -15,11 +13,10 @@ if "letzte_antwort" not in st.session_state:
 if "frage_erlaubt" not in st.session_state:
     st.session_state["frage_erlaubt"] = True
 
-# Streamlit-Seitenkonfiguration
 st.set_page_config(page_title="TARS KI", layout="centered")
 st.title("TARS - Deine deutschsprachige KI")
 
-# TARS Gesicht anzeigen
+# TARS Gesicht
 st.markdown("""
 <style>
 .tars-face {
@@ -79,16 +76,13 @@ function blinkEyes() {
 </script>
 """, unsafe_allow_html=True)
 
-# Regler (werden bei Antwort gesperrt)
 humor = st.slider("Humorstufe", 0, 100, 20, disabled=st.session_state["antwort_laeuft"])
 ehrlichkeit = st.slider("Ehrlichkeitsstufe", 0, 100, 100, disabled=st.session_state["antwort_laeuft"])
 
-# Eingabe mit Button-Steuerung
 user_input = None
 if st.session_state["frage_erlaubt"] and not st.session_state["antwort_laeuft"]:
     user_input = st.text_input("Was möchtest du TARS fragen?")
 
-# Prompt-Vorbereitung
 def build_prompt(question, humor, ehrlichkeit):
     return (
         f"Du bist TARS, ein KI-Roboter aus dem Film Interstellar. "
@@ -97,7 +91,6 @@ def build_prompt(question, humor, ehrlichkeit):
         f"Antworte auf: '{question}'"
     )
 
-# Sprachausgabe mit minimalistischem Player
 def speak_with_elevenlabs(text):
     voice_id = "FTNCalFNG5bRnkkaP5Ug"
     url = f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}"
@@ -130,7 +123,6 @@ def speak_with_elevenlabs(text):
     else:
         st.error(f"Fehler bei der Sprachausgabe von ElevenLabs: {response.status_code} – {response.text}")
 
-# Antwortverarbeitung
 if user_input:
     st.session_state["antwort_laeuft"] = True
     st.session_state["frage_erlaubt"] = False
@@ -150,7 +142,11 @@ if user_input:
             st.error(f"Fehler bei OpenAI oder ElevenLabs: {e}")
     st.session_state["antwort_laeuft"] = False
 
-# Neue Frage starten
 if not st.session_state["frage_erlaubt"] and not st.session_state["antwort_laeuft"]:
     if st.button("Neue Frage stellen"):
+        st.session_state["frage_erlaubt"] = True
+
+# === BUGFIX-Button falls Eingabe hängen bleibt ===
+if not st.session_state["frage_erlaubt"] and not st.session_state["antwort_laeuft"] and st.session_state["letzte_antwort"] == "":
+    if st.button("Eingabe erneut aktivieren"):
         st.session_state["frage_erlaubt"] = True
